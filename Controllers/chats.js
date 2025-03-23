@@ -1,5 +1,5 @@
 const ChatModel = require('../Models/Chats.js');
-
+const {ClienteAnonimo, Chat} = require('../Models/Relaciones.js');
 
 exports.getAllChats = async (req, res) => {
     try {
@@ -25,9 +25,7 @@ exports.getUChat = async (req, res) => {
         if (user.length === 0) {
             // Si no se encuentra ningún usuario, se retorna un JSON predeterminado
             return res.json({
-                message: "No hay Chats",
-                id_card: req.params.id,
-                data: null
+                message: "No hay Chats"
             });
         }
 
@@ -41,3 +39,30 @@ exports.getUChat = async (req, res) => {
         });
     }
 };
+
+
+exports.getChatByuser = async (req, res) => {
+    try {
+        const chats = await ChatModel.findAll({
+
+            attributes: ['id', 'estado'], // Solo obtenemos el ID y el estado del chat
+          include: [
+                {
+                    model: ClienteAnonimo,
+                    as: 'clientes',
+                    as: 'cliente',
+                    attributes: ['id', 'nombre','Estado'] // Obtenemos el ID y el nombre del cliente
+                }
+            ]
+        });
+
+
+        res.json(chats);
+    } catch (error) {
+        console.error('Error al obtener los chats:', error);
+        res.status(500).json({ error: 'Error al obtener los chats' });
+    }
+};
+
+
+

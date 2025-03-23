@@ -23,8 +23,8 @@ const { v4: uuidv4 } = require("uuid");
         type: DataTypes.STRING,
         allowNull: false
     },
-    estado: {
-        type: DataTypes.STRING,
+    Estado: {
+        type: DataTypes.ENUM('Activo', 'Desconectado', 'Atendido'),
         allowNull: false
     }
    

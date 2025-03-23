@@ -19,12 +19,11 @@ const { v4: uuidv4 } = require("uuid");
         type: DataTypes.STRING,
         allowNull: false
     },
-    apellido: {
+ 
+    password: { 
         type: DataTypes.STRING,
         allowNull: false
-    }, 
-
-    password: { 
+    },rol: {
         type: DataTypes.STRING,
         allowNull: false
     }
