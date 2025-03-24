@@ -21,7 +21,7 @@ const { v4: uuidv4 } = require("uuid");
     },
    ip: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: true
     }
 })
 

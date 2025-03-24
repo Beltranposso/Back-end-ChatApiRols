@@ -157,92 +157,108 @@ app.get('/get-user-info', (req, res) => {
 
 const usuariosConectados = {};
 io.on('connection', async (socket) => {
-  const { sitioId, userId, rol } = socket.handshake.query; // Recibir info
-  const origin = socket.handshake.headers.origin;
+    const { sitioId, userId, rol } = socket.handshake.query; // Recibir info
+    const origin = socket.handshake.headers.origin;
 
-  console.log(`🟢 Nueva conexión desde ${origin}, sitio: ${sitioId}, usuario: ${userId}, rol: ${rol}`);
+    console.log(`🟢 Nueva conexión desde ${origin}, sitio: ${sitioId}, usuario: ${userId}, rol: ${rol}`);
 
-  if (origin && !allowedOrigins.has(origin)) {
-      addAllowedOrigin(origin);
-  }
+    if (origin && !allowedOrigins.has(origin)) {
+        addAllowedOrigin(origin);
+    }
 
-  const sitio = await Sitio.findByPk(sitioId);
-  if (!sitio) {
-      console.log("❌ Sitio no registrado. Desconectando...");
-      return socket.disconnect();
-  }
+    const sitio = await Sitio.findByPk(sitioId);
+    if (!sitio) {
+        console.log("❌ Sitio no registrado. Desconectando...");
+        return socket.disconnect();
+    }
 
-  if (userId) usuariosConectados[userId] = socket.id;
+    if (userId) usuariosConectados[userId] = socket.id;
 
-  socket.join(`sitio_${sitioId}`);
+    socket.join(`sitio_${sitioId}`);
 
-  if (rol === 'asesor' || rol === 'coordinador') {
-      socket.join(`asesores_${sitioId}`);
-      console.log(`📢 ${rol.toUpperCase()} conectado en sitio ${sitioId}: ${userId}`);
-  }
+    if (rol === 'asesor' || rol === 'coordinador') {
+        socket.join(`asesores_${sitioId}`);
+        console.log(`📢 ${rol.toUpperCase()} conectado en sitio ${sitioId}: ${userId}`);
+    }
 
-  // 📌 Cliente envía un mensaje
-  socket.on('mensaje', async (data) => {
-      const { chatId, contenido, enviadoPor } = data;
+    // 📌 Cliente envía un mensaje
+    socket.on('mensaje', async (data) => {
+        const { chatId, contenido, enviadoPor } = data;
 
-      console.log(`📩 Cliente envió mensaje en sitio ${sitioId}:`, data);
+        console.log(`📩 Cliente envió mensaje en sitio ${sitioId}:`, data);
 
-      await Mensaje.create({ chat_id: chatId, contenido, enviado_por: enviadoPor });
+        await Mensaje.create({ chat_id: chatId, contenido, enviado_por: enviadoPor });
 
-      io.to(`asesores_${sitioId}`).emit('mensaje', data);
-  });
+        // Enviar a asesores
+        io.to(`asesores_${sitioId}`).emit('mensaje', data);
 
-  // 📌 Asesor o Coordinador responde a un mensaje
-  socket.on('respuesta', async (data) => {
-      const { chatId, contenido } = data;
+        // 🔹 Enviar también al cliente que pertenece a ese chat
+        const chat = await Chat.findOne({ where: { id: chatId } });
+        if (chat && usuariosConectados[chat.cliente_id]) {
+            io.to(usuariosConectados[chat.cliente_id]).emit('mensaje', data);
+            console.log(`✅ Mensaje enviado al cliente ${chat.cliente_id} (socket: ${usuariosConectados[chat.cliente_id]})`);
+        }
+    }); 
 
-      const chat = await Chat.findOne({ where: { id: chatId } });
+    // 📌 Asesor o Coordinador responde a un mensaje
+    socket.on('respuesta', async (data) => {
+        const { chatId, contenido, enviadoPor } = data;
 
-      if (!chat) {
-          console.log(`❌ Chat no encontrado: ${chatId}`);
-          return;
-      }
+        const chat = await Chat.findOne({ where: { id: chatId } });
 
-      const { cliente_id, asesor_id } = chat;
+        if (!chat) {
+            console.log(`❌ Chat no encontrado: ${chatId}`);
+            return;
+        }
 
-      console.log(`📝 RESPUESTA del asesor ${asesor_id} -> Cliente ${cliente_id}: "${contenido}"`);
+        const { cliente_id, asesor_id } = chat;
 
-      await Mensaje.create({ chat_id: chatId, contenido, enviado_por: "Asesor" });
+        console.log(`📝 RESPUESTA de ${enviadoPor} -> Cliente ${cliente_id}: "${contenido}"`);
 
-      if (usuariosConectados[cliente_id]) {
-          io.to(usuariosConectados[cliente_id]).emit('mensaje', {
-              chatId,
-              contenido,
-              enviado_por: "Asesor",
-              clienteId: cliente_id,
-              asesorId: asesor_id,
-          });
-          console.log(`✅ Mensaje enviado al cliente ${cliente_id} (socket: ${usuariosConectados[cliente_id]})`);
-      } else {
-          console.log(`⚠️ Cliente ${cliente_id} no está conectado.`);
-      }
-  });
+        await Mensaje.create({ chat_id: chatId, contenido, enviado_por: enviadoPor });
 
-  // 📌 Notificar cuando un usuario está escribiendo
-  socket.on('escribiendo', ({ chatId, userId }) => {
-      console.log(`✍️ Usuario ${userId} está escribiendo en el chat ${chatId}`);
-      io.to(`sitio_${sitioId}`).emit('escribiendo', { chatId, userId });
-  });
+        // 🔹 Enviar a asesores
+        io.to(`asesores_${sitioId}`).emit('mensaje', {
+            chatId,
+            contenido,
+            enviado_por: enviadoPor
+        });
 
-  // 📌 Notificar cuando un usuario deja de escribir
-  socket.on('detenerEscribiendo', ({ chatId, userId }) => {
-      console.log(`🛑 Usuario ${userId} dejó de escribir en el chat ${chatId}`);
-      io.to(`sitio_${sitioId}`).emit('detenerEscribiendo', { chatId, userId });
-  });
+        // 🔹 Enviar al cliente si está conectado
+        if (usuariosConectados[cliente_id]) {
+            io.to(usuariosConectados[cliente_id]).emit('mensaje', {
+                chatId,
+                contenido,
+                enviado_por: enviadoPor,
+                clienteId: cliente_id,
+                asesorId: asesor_id,
+            });
+            console.log(`✅ Mensaje enviado al cliente ${cliente_id} (socket: ${usuariosConectados[cliente_id]})`);
+        } else {
+            console.log(`⚠️ Cliente ${cliente_id} no está conectado.`);
+        }
+    });
 
-  // Manejar desconexiones
-  socket.on('disconnect', () => {
-      console.log(`❌ Usuario desconectado: ${userId}`);
-      delete usuariosConectados[userId];
-  });
+    // 📌 Notificar cuando un usuario está escribiendo
+    socket.on('escribiendo', ({ chatId, userId }) => {
+        console.log(`✍️ Usuario ${userId} está escribiendo en el chat ${chatId}`);
+        io.to(`sitio_${sitioId}`).emit('escribiendo', { chatId, userId });
+    });
+
+    // 📌 Notificar cuando un usuario deja de escribir
+    socket.on('detenerEscribiendo', ({ chatId, userId }) => {
+        console.log(`🛑 Usuario ${userId} dejó de escribir en el chat ${chatId}`);
+        io.to(`sitio_${sitioId}`).emit('detenerEscribiendo', { chatId, userId });
+    }); 
+
+    // Manejar desconexiones
+    socket.on('disconnect', () => {
+        console.log(`❌ Usuario desconectado: ${userId}`);
+        delete usuariosConectados[userId];
+    });
 });
       
-      
+       
       
       
       

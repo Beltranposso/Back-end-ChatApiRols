@@ -1,5 +1,5 @@
 const ChatModel = require('../Models/Chats.js');
-const {ClienteAnonimo, Chat,Mensaje,Usuario} = require('../Models/Relaciones.js');
+const {ClienteAnonimo, Chat,Mensaje,Usuario,Sitio} = require('../Models/Relaciones.js');
 
 exports.getAllChats = async (req, res) => {
     try {
@@ -127,5 +127,41 @@ exports.getChatBycoordinador = async (req, res) => {
     } catch (error) {
         console.error('Error al obtener los chats:', error);
         res.status(500).json({ error: 'Error al obtener los chats' });
+    }
+};
+
+
+
+exports.createChat = async (req, res) => {
+    try {
+        const { nombre, correo, sitio_id } = req.body;
+
+        // Validar que los datos requeridos estén presentes
+        if (!nombre || !correo || !sitio_id) {
+            return res.status(400).json({ message: "Nombre, correo y sitio_id (nombre del sitio) son obligatorios" });
+        }
+
+        // Buscar el sitio en la base de datos por su nombre
+        const sitio = await Sitio.findOne({ where: { url: sitio_id } });
+
+        // Verificar si el sitio existe
+        if (!sitio) {
+            return res.status(404).json({ message: "El sitio no existe en la base de datos" });
+        }
+
+        // Crear cliente anónimo en la base de datos con el ID del sitio encontrado
+        const nuevoCliente = await ClienteAnonimo.create({ nombre, correo, sitio_id: sitio.id });
+
+        // Crear un nuevo chat con el ID del cliente anónimo generado y el ID del sitio
+        const nuevoChat = await ChatModel.create({ cliente_id: nuevoCliente.id, sitio_id: sitio.id });
+
+        res.status(201).json({
+            message: "Chat creado con éxito",
+            chat: nuevoChat
+        });
+
+    } catch (error) {
+        console.error("Error al crear el chat anónimo:", error);
+        res.status(500).json({ message: "Hubo un error al crear el chat" });
     }
 };

@@ -13,7 +13,7 @@ const { v4: uuidv4 } = require("uuid");
     },
    sitio_id: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: true
     },
     cliente_id: {
         type: DataTypes.STRING,
@@ -21,11 +21,10 @@ const { v4: uuidv4 } = require("uuid");
     },
     asesor_id: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: true
     }, 
-    Estado: {
+    estado: {
         type: DataTypes.ENUM('Activo', 'Desconectado', 'Atendido'),
-        allowNull: false
     }
    
 })
