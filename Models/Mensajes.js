@@ -11,12 +11,24 @@ const { v4: uuidv4 } = require("uuid");
         allowNull: true,
         primaryKey: true
     },
-    url: {
+  chat_id: {
         type: DataTypes.STRING,
         allowNull: false
+    },
+    contenido: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    enviado_por: {
+        type: DataTypes.ENUM('Cliente', 'Asesor'),
+        allowNull: false
+    },createdAt: {
+        type: DataTypes.DATE,
+        allowNull: false
     }
+
    
 })
 
-
-module.exports = Tabla 
+ 
+module.exports = Tabla       

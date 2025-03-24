@@ -22,7 +22,7 @@ const { v4: uuidv4 } = require("uuid");
     asesor_id: {
         type: DataTypes.STRING,
         allowNull: false
-    },
+    }, 
     Estado: {
         type: DataTypes.ENUM('Activo', 'Desconectado', 'Atendido'),
         allowNull: false

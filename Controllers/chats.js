@@ -1,5 +1,5 @@
 const ChatModel = require('../Models/Chats.js');
-const {ClienteAnonimo, Chat} = require('../Models/Relaciones.js');
+const {ClienteAnonimo, Chat,Mensaje,Usuario} = require('../Models/Relaciones.js');
 
 exports.getAllChats = async (req, res) => {
     try {
@@ -46,7 +46,7 @@ exports.getChatByuser = async (req, res) => {
         const chats = await ChatModel.findAll({
 
             attributes: ['id', 'estado'], // Solo obtenemos el ID y el estado del chat
-          include: [
+                include: [
                 {
                     model: ClienteAnonimo,
                     as: 'clientes',
@@ -55,7 +55,7 @@ exports.getChatByuser = async (req, res) => {
                 }
             ]
         });
-
+        
 
         res.json(chats);
     } catch (error) {
@@ -64,5 +64,68 @@ exports.getChatByuser = async (req, res) => {
     }
 };
 
+exports.getChaIdtByuser = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const chat = await Chat.findOne({
+            where: { id },
+            attributes: ['id', 'estado'], // Obtener solo el ID y estado del chat
+            include: [
+                {
+                    model: ClienteAnonimo,
+                    as: 'cliente',
+                    attributes: ['id', 'nombre', 'Estado'] // Obtener ID y nombre del cliente
+                },{
+                    model: Usuario,
+                    as: 'asesor',
+                    attributes: ['id', 'nombre', 'rol'],
+                    // Solo trae chats que tengan un Usuario asignado
+                },
+                {
+                    model: Mensaje,
+                    as: 'mensajes',
+                    attributes: ['id', 'contenido', 'enviado_por', 'createdAt'], // Obtener mensajes del chat
+                    order: [['createdAt', 'ASC']] // Ordenar mensajes por fecha de creación
+                }
+            ]
+        });
+
+        if (!chat) {
+            return res.status(404).json({ error: 'Chat no encontrado' });
+        }
+
+        res.json(chat);
+    } catch (error) {
+        console.error('Error al obtener el chat:', error);
+        res.status(500).json({ error: 'Error al obtener el chat' });
+    }
+};
 
 
+
+exports.getChatBycoordinador = async (req, res) => {
+    try {
+        const chats = await ChatModel.findAll({
+            attributes: ['id', 'estado'], // Solo obtenemos el ID y el estado del chat
+            include: [
+                {
+                    model: ClienteAnonimo,
+                    as: 'cliente',
+                    attributes: ['id', 'nombre', 'Estado'],
+                    required: true // Solo trae chats que tengan un ClienteAnonimo
+                },
+                {
+                    model: Usuario,
+                    as: 'asesor',
+                    attributes: ['id', 'nombre', 'rol'],
+                    required: true // Solo trae chats que tengan un Usuario asignado
+                }
+            ]
+        });
+
+        res.json(chats);
+    } catch (error) {
+        console.error('Error al obtener los chats:', error);
+        res.status(500).json({ error: 'Error al obtener los chats' });
+    }
+};
