@@ -85,7 +85,7 @@ exports.getChaIdtByuser = async (req, res) => {
                     model: Mensaje,
                     as: 'mensajes',
                     attributes: ['id', 'contenido', 'enviado_por', 'createdAt'], // Obtener mensajes del chat
-                    order: [['createdAt', 'ASC']] // Ordenar mensajes por fecha de creación
+                     // Ordenar mensajes por fecha de creación
                 }
             ]
         });

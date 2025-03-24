@@ -9,7 +9,7 @@ const { v4: uuidv4 } = require("uuid");
         type: DataTypes.STRING,
         defaultValue: () => uuidv4(), // Generar un UUID por defecto
         allowNull: true,
-        primaryKey: true
+        primaryKey: true    
     },
    sitio_id: {
         type: DataTypes.STRING,
