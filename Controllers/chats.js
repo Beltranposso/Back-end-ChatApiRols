@@ -133,6 +133,7 @@ exports.getChatBycoordinador = async (req, res) => {
 
 
 exports.createChat = async (req, res) => {
+
     try {
         const { nombre, correo, sitio_id } = req.body;
 
@@ -153,7 +154,7 @@ exports.createChat = async (req, res) => {
         const nuevoCliente = await ClienteAnonimo.create({ nombre, correo, sitio_id: sitio.id });
 
         // Crear un nuevo chat con el ID del cliente anónimo generado y el ID del sitio
-        const nuevoChat = await ChatModel.create({ cliente_id: nuevoCliente.id, sitio_id: sitio.id });
+        const nuevoChat = await ChatModel.create({cliente_id: nuevoCliente.id, sitio_id: sitio.id });
 
         res.status(201).json({
             message: "Chat creado con éxito",
@@ -165,3 +166,7 @@ exports.createChat = async (req, res) => {
         res.status(500).json({ message: "Hubo un error al crear el chat" });
     }
 };
+
+
+
+

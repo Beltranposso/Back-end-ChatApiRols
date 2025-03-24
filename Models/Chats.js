@@ -1,26 +1,27 @@
 const db = require ("../ConexionDB/conexion.js") 
-const { DataTypes } = require("sequelize");
-const { v4: uuidv4 } = require("uuid"); 
+const { DataTypes, INTEGER } = require("sequelize");
+
 
 
  const Tabla = db.define('chats',{
-
-    id: {
-        type: DataTypes.STRING,
-        defaultValue: () => uuidv4(), // Generar un UUID por defecto
-        allowNull: true,
-        primaryKey: true    
+ 
+    id: {  // ✅ Definir correctamente el id
+        type: DataTypes.INTEGER,  // Cambiar a BIGINT si esperas muchos registros
+        autoIncrement: true,
+        primaryKey: true,
+        allowNull: false
     },
+
    sitio_id: {
-        type: DataTypes.STRING,
+        type: DataTypes.INTEGER,
         allowNull: true
     },
     cliente_id: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING,  // Debes usar el MISMO tipo que el id al que referencia
         allowNull: false
     },
     asesor_id: {
-        type: DataTypes.STRING,
+        type: DataTypes.INTEGER,
         allowNull: true
     }, 
     estado: {

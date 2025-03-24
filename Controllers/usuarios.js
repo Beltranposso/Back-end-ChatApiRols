@@ -41,3 +41,10 @@ exports.getUser = async (req, res) => {
         });
     }
 };
+
+
+exports.createUsers = async (req, res) => {
+
+
+
+};

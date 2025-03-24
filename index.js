@@ -32,12 +32,11 @@ const io = require('socket.io')(server, {
 });
 const allowedOrigins = new Set(["http://localhost:5173"]);
 
-app.use(cors({ 
-  /* origin: ['https://control360.co', 'https://controlvotantes360.co.control360.co'] */
-  origin: 'http://localhost:5173',
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  credentials: true // Si tu aplicación necesita cookies o autenticación basada en sesiones
-}));
+app.use(cors({  
+    origin: /^http:\/\/localhost(:\d+)?$/, // Expresión regular para localhost con cualquier puerto
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true
+  }));
  
 app.use(express.json());
 app.use(cookieParser());
