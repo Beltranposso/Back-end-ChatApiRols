@@ -7,10 +7,14 @@ const { DataTypes } = require("sequelize");
     id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
-        allowNull: true,
+        allowNull: false,
         primaryKey: true
     },
     url: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    nombre: {
         type: DataTypes.STRING,
         allowNull: false
     }

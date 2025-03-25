@@ -1,5 +1,5 @@
 const express = require('express');
-const {getAllChats,getUChat ,getChatByuser,getChaIdtByuser,getChatBycoordinador,createChat} = require('../Controllers/chats.js');
+const {getAllChats,getUChat ,getChatByuser,getChaIdtByuser,getChatBycoordinador,createChat, AssesorEntraAlchat} = require('../Controllers/chats.js');
 
 const router = express.Router();
 
@@ -12,6 +12,8 @@ router.get('/chatByuser/u/', verificarSesion, getChatByuser);
 router.get('/chatByuser/c/:id', verificarSesion, getChaIdtByuser);
 router.get('/chatBycoordinador/c/', verificarSesion, getChatBycoordinador);
 router.post('/createChat',createChat);
+router.put('/AssesorEntraAlchat/:id',AssesorEntraAlchat);
+
 
 module.exports = router;
    

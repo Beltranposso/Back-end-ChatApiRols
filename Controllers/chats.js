@@ -168,5 +168,29 @@ exports.createChat = async (req, res) => {
 };
 
 
+exports.AssesorEntraAlchat = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { idAsesor } = req.body;
+
+        // Buscar el chat en la base de datos por su ID
+        const chat = await ChatModel.findByPk(id);
+ 
+        // Verificar si el chat existe
+        if (!chat) {
+            return res.status(404).json({ message: "El chat no existe en la base de datos" });
+        }
+
+        // Asignar el asesor al chat
+        chat.asesor_id = idAsesor;
+        await chat.save();
+
+        res.status(200).json({ message: "Asesor asignado al chat con éxito" });
+    } catch (error) {
+        console.error("Error al asignar el asesor al chat:", error);
+        res.status(500).json({ message: "Hubo un error al asignar el asesor al chat" });
+    }
+};
+
 
 
