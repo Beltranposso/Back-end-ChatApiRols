@@ -67,14 +67,14 @@ const io = require('socket.io')(server, {
 
 
 app.use(async (req, res, next) => {
-    const fixedURL = "http://localhost:5173"; // 🌍 URL fija que siempre se permite
+    const fixedURL = ["http://localhost:5173", "http://localhost"]; // 🌍 URLs fijas permitidas
 
     // 🔍 Obtiene los dominios permitidos desde la base de datos
     const allowedOrigins = await getAllowedOrigins();
 
     const corsOptions = {
         origin: (origin, callback) => {
-            if (!origin || origin === fixedURL || allowedOrigins.includes(origin)) {
+            if (!origin || fixedURL.includes(origin) || allowedOrigins.includes(origin)) {
                 callback(null, true);
             } else {
                 callback(new Error("Not allowed by CORS"));
@@ -107,7 +107,7 @@ app.post('/login', async (req, res) => {
       }
 
       // Buscar el usuario por nombre
-      const user = await Usermodel.findOne({ where: { nombre } });
+      const user = await Usermodel.findOne({ where: { nombre, password } });
 
       if (!user) {
           return res.status(401).json({ message: 'Credenciales incorrectas' });
@@ -126,7 +126,7 @@ app.post('/login', async (req, res) => {
 
       // Crear token con información del usuario
       const token = jwt.sign(
-          { id: user.id, Nombre:user.nombre, rol: user.rol },
+          { id: user.id, Nombre:user.nombre, rol: user.rol,Sitio_id:user.sitio_id},
           process.env.JWT_SECRET,
           { expiresIn: '1d' }
       );
@@ -146,6 +146,7 @@ app.post('/login', async (req, res) => {
               id: user.id,
               Nombre: user.nombre,
               Cargo: user.rol
+
           }
       });
 
@@ -185,13 +186,13 @@ app.get('/get-user-info', (req, res) => {
     }
 
     // Extraer el rol (cargo) del token y devolverlo
-    const { rol,Nombre} = decoded;
-    console.log("Cargo a devolver :", rol);
-    res.json({ rol , Nombre});
+    const {id, rol,Nombre,Sitio_id} = decoded;
+    console.log("Cargo a devolver :", Sitio_id);
+    res.json({id, rol , Nombre,Sitio_id});
   });
 });
 
-
+ 
  
 
 
@@ -215,7 +216,7 @@ const addAllowedOrigin = async (origin) => {
         console.error(`❌ Error al agregar origen: ${origin}`, error);
     }
 };
-
+ 
 // Llamar la función al inicio y actualizar cada 60 segundos
 actualizarAllowedOrigins();
 setInterval(actualizarAllowedOrigins, 60000);
@@ -242,32 +243,58 @@ io.on("connection", async (socket) => {
     if (userId) usuariosConectados[userId] = socket.id;
 
     socket.join(`sitio_${sitioId}`);
-
+ 
     if (rol === 'asesor' || rol === 'coordinador') {
         socket.join(`asesores_${sitioId}`);
         console.log(`📢 ${rol.toUpperCase()} conectado en sitio ${sitioId}: ${userId}`);
-    }
-
-    socket.on("respuesta", async (data) => {
+    } 
+    
+    
+    
+    
+    socket.on('respuesta', async (data) => {
         const { chatId, contenido, enviadoPor,createdAt } = data;
-        console.log(`📩 Cliente envió mensaje en sitio ${sitioId}:`, data);
-    
-        await Mensaje.create({ chat_id: chatId, contenido, enviado_por: enviadoPor });
-    
-        // 📢 Unificar mensaje para enviar a los clientes
-        const mensajeUnificado = { chatId, contenido, enviadoPor, createdAt };
-    
-        // Enviar a asesores
-        io.to(`asesores_${sitioId}`).emit("mensaje", mensajeUnificado);
-    
-        // 🔹 Enviar también al cliente que pertenece a ese chat
+
         const chat = await Chat.findOne({ where: { id: chatId } });
-        if (chat && usuariosConectados[chat.cliente_id]) {
-            io.to(usuariosConectados[chat.cliente_id]).emit("mensaje", mensajeUnificado);
-            console.log(`✅ Mensaje enviado al cliente ${chat.cliente_id}`);
+    
+        if (!chat) {
+            console.log(`❌ Chat no encontrado: ${chatId}`);
+            return;
         }
     
+        const { cliente_id, asesor_id } = chat;
     
+        console.log(`📝 RESPUESTA de ${enviadoPor} -> Cliente ${cliente_id}: "${contenido}"`);
+    
+        await Mensaje.create({ chat_id: chatId, contenido, enviado_por: enviadoPor });
+        
+        // 🔹 Enviar a asesores
+        socket.broadcast.emit('mensaje', {
+                chatId, 
+                contenido,
+                enviado_por: enviadoPor,
+                createdAt: createdAt,
+            });
+            io.emit('Mensaje23', {
+                chatId, 
+                contenido,
+                enviado_por: enviadoPor,
+                createdAt: createdAt,
+            });
+        // 🔹 Enviar al cliente si está conectado
+   
+    });
+     
+    // 📌 Notificar cuando un usuario está escribiendo
+    socket.on('escribiendo', ({ chatId, userId }) => {
+        console.log(`✍️ Usuario ${userId} está escribiendo en el chat ${chatId}`);
+        io.to(`sitio_${sitioId}`).emit('escribiendo', { chatId, userId });
+    });
+
+    // 📌 Notificar cuando un usuario deja de escribir
+    socket.on('detenerEscribiendo', ({ chatId, userId }) => { 
+        console.log(`🛑 Usuario ${userId} dejó de escribir en el chat ${chatId}`);
+        io.to(`sitio_${sitioId}`).emit('detenerEscribiendo', { chatId, userId });
     });
 
     // 📌 Cliente envía un mensaje
@@ -276,10 +303,10 @@ io.on("connection", async (socket) => {
         console.log(`📩 Cliente envió mensaje en sitio ${sitioId}:`, data);
 
         await Mensaje.create({ chat_id: chatId, contenido, enviado_por: enviadoPor });
-
+  
+        console.log(`🔹 Emitiendo evento "mensaje" a la sala asesores_${sitioId}`);
         // Enviar a asesores
         io.to(`asesores_${sitioId}`).emit("mensaje", data);
-
         // 🔹 Enviar también al cliente que pertenece a ese chat
         const chat = await Chat.findOne({ where: { id: chatId } });
         if (chat && usuariosConectados[chat.cliente_id]) {
@@ -298,7 +325,7 @@ io.on("connection", async (socket) => {
        
       
       
-      
+
       
       
       // Rutas de prueba
