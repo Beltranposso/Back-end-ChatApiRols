@@ -68,6 +68,7 @@ exports.getChatByuser = async (req, res) => {
 };
 
 exports.getChaIdtByuser = async (req, res) => {
+    console.log("🔧 Obtener chat por ID", req.params.id);
     const { id } = req.params;
     try {
         const chat = await Chat.findOne({
