@@ -25,7 +25,9 @@ const Tabla = db.define('sitios',{
         allowNull: false
     }
    
-})
+},{
+    timestamps: false, // Desactiva los timestamps automáticos de Sequelize
+});
 
 // Exporta el modelo 'sitios' para que pueda ser utilizado en otras partes de la aplicación
 module.exports = Tabla;

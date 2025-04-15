@@ -4,6 +4,8 @@ const {ClienteAnonimo, Chat,Mensaje,Usuario,Sitio} = require('../Models/Relacion
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
 const{sequelize} = require('../ConexionDB/conexion.js');
+
+/// Obtener todos los chats
 exports.getAllChats = async (req, res) => {
     try {
         const Users = await ChatModel.findAll();
@@ -18,7 +20,8 @@ exports.getAllChats = async (req, res) => {
 
 
 
-
+/// Obtener un chat específico por ID
+/// Se utiliza el método findAll para buscar un chat específico por su ID en la base de datos.
 exports.getUChat = async (req, res) => {
     try {
         const user = await ChatModel.findAll({
@@ -44,6 +47,8 @@ exports.getUChat = async (req, res) => {
 };
 
 
+/// Obtener todos los chats por ID de cliente anónimo
+/// Se utiliza el método findAll para buscar todos los chats por su ID de cliente anónimo en la base de datos.
 exports.getChatByuser = async (req, res) => {
     try {
         const chats = await ChatModel.findAll({
@@ -67,6 +72,9 @@ exports.getChatByuser = async (req, res) => {
     }
 };
 
+
+/// Obtener un chat específico por ID de cliente anónimo
+/// Se utiliza el método findOne para buscar un chat específico por su ID de cliente anónimo en la base de datos.
 exports.getChaIdtByuser = async (req, res) => {
     const { id } = req.params;
     try {
@@ -106,6 +114,8 @@ exports.getChaIdtByuser = async (req, res) => {
 
 
 
+/// Obtener todos los chats por ID de coordinador
+/// Se utiliza el método findAll para buscar todos los chats por su ID de coordinador en la base de datos.
 exports.getChatBycoordinador = async (req, res) => {
     try {
         const chats = await ChatModel.findAll({
@@ -134,7 +144,8 @@ exports.getChatBycoordinador = async (req, res) => {
 };
 
 
-
+/// Obtener todos los chats por ID de asesor
+/// Se utiliza el método findAll para buscar todos los chats por su ID de asesor en la base de datos.
 exports.createChat = async (req, res) => {
 console.log("🔧 Crear chat anónimo", req.body);
     try {
@@ -171,6 +182,8 @@ console.log("🔧 Crear chat anónimo", req.body);
 };
 
 
+// Crear un nuevo chat y asignar un asesor
+/// Se utiliza el método create para crear un nuevo chat y asignar un asesor en la base de datos.
 exports.AssesorEntraAlchat = async (req, res) => {
     console.log("🔧 Asesor entra al chat", req.id);
 
@@ -221,7 +234,8 @@ exports.AssesorEntraAlchat = async (req, res) => {
 
 
 
-
+/// Obtener todos los chats abiertos
+/// Se utiliza el método findAll para buscar todos los chats abiertos en la base de datos.
 exports.getChatsAbiertos = async (req, res) => {
     try {
         // Obtener token de las cookies
@@ -253,6 +267,9 @@ exports.getChatsAbiertos = async (req, res) => {
     }
 };
 
+
+// Obtener todos los chats cerrados
+// Se utiliza el método findAll para buscar todos los chats cerrados en la base de datos.
 exports.getChatsCerrados = async (req, res) => {
     try {
         // Obtener token de las cookies
