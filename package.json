@@ -5,6 +5,7 @@
     "cookie": "^1.0.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "deepl": "^1.0.13",
     "deepl-node": "^1.17.3",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",

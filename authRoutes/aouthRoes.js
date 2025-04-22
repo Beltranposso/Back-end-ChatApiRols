@@ -54,7 +54,7 @@ exports.login = async (req, res) => {
         res.setHeader('Set-Cookie', cookie.serialize('token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            sameSite: 'lax', 
             path: '/',
             maxAge: 86400,
         }));

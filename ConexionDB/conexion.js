@@ -8,10 +8,10 @@ const ConexionDB = new Sequelize(
     {
         host: process.env.DB_HOST,
         dialect: process.env.DB_DIALECT || "mysql", // 🔥 Asegurar que haya un dialecto definido
-        logging: false, // 🔇 Evita logs innecesarios de Sequelize en la consola
+        logging: true, // 🔇 Evita logs innecesarios de Sequelize en la consola
     }
-); 
-
+);  
+    
 // Verificar conexión 
 (async () => {
     try {
@@ -20,6 +20,6 @@ const ConexionDB = new Sequelize(
     } catch (error) {
         console.error("❌ Error de conexión a la base de datos:", error);
     }
-})();
+})(); 
 
 module.exports = ConexionDB;

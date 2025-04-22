@@ -44,3 +44,35 @@ exports.getUMensjaes = async (req, res) => {
         });
     }
 };
+
+exports.createMensaje = async (req, res) => {
+    try {
+        const { chatId, contenido, enviadoPor,DateNow } = req.body;
+      
+        // Validación básica
+        if (!chatId || !contenido || !enviadoPor) {
+            return res.status(400).json({
+                message: "Faltan datos requeridos (chatId, contenido o enviadoPor)."
+            });
+        }
+
+        // Crear el mensaje
+        const nuevoMensaje = await MensajeModel.create({
+            chat_id: chatId,
+            contenido: contenido,
+            enviado_por: enviadoPor,
+            createdAt: DateNow
+        });
+ 
+        res.status(201).json({
+            message: "Mensaje creado exitosamente",
+            data: nuevoMensaje
+        });
+    } catch (error) {
+        console.error("❌ Error al crear el mensaje:", error.message);
+        res.status(500).json({
+            message: "Error interno del servidor",
+            error: error.message
+        });
+    }
+};
