@@ -2,7 +2,7 @@ const Sitio = require('../Models/Sitios.js');
 const Chat = require('../Models/Chats.js');
 const Mensaje = require('../Models/Mensajes.js');
 const { translateText } = require('../services/tranlate.js');
-
+const { traducirMensajeGemini } = require('../services/GeminisTraslate.js');
 let cachedOrigins = new Set();
 const connectedUsers = {};
  
@@ -61,60 +61,69 @@ const configureSockets = (io) => {
         });
 
         // 💬 Evento para recibir y reenviar un mensaje
-
         socket.on("respuesta", async (data) => {
-            const { chatId, contenido, enviadoPor, createdAt, rol } = data; // asegúrate que `rol` sea enviado en el mensaje
-        
+            const { chatId, contenido, enviadoPor, createdAt, rol } = data;
+          
             console.log(`💬 Mensaje recibido: "${contenido}" de ${enviadoPor} en chat ${chatId}`);
-        
+          
             try {
-                const chat = await Chat.findOne({ where: { id: chatId } });
-                if (!chat) return;
-        
-                let contenidoTraducido = contenido;
-        
-                if (enviadoPor === "cliente") {
-                    // Traducir al español para el asesor
-                    const result = await translateText(contenido, "ES");
-                    contenidoTraducido = result.text;
-                    // Guardar el idioma del cliente
-                    clienteIdiomas[chat.cliente_id] = result.detectedSourceLanguage;
-                    console.log(`Idioma del cliente: ${contenidoTraducido}`);
-                }
-        
-                if (enviadoPor === "asesor") {
-                    // Obtener idioma del cliente
-                    const idiomaCliente = clienteIdiomas[chat.cliente_id]; // Asegúrate de tener esta propiedad o forma de identificarlo
-                    console.log(`Idioma del cliente desde el asesor: ${idiomaCliente}`);
-                    if (idiomaCliente) {
-                        const result = await translateText(contenido, idiomaCliente);
-                        contenidoTraducido = result.text;
-                        console.log(`Idioma del clienteddddddddd: ${contenidoTraducido}`);
-                        /* agregar logica para guardar el mensaje */
-                        await Mensaje.create({
-                            chat_id: chatId,
-                            contenido: contenido,
-                            enviado_por: enviadoPor,
-                            createdAt: new Date()
-                        });
-                        console.log(`Mensaje guardado: ${contenido}`);
-                    }
-                }
-        
-                // Enviar mensaje traducido a la sala (excepto al emisor)
-                socket.to(`chat_${chatId}`).emit("mensaje", {
-                    chatId,
+              const chat = await Chat.findOne({ where: { id: chatId } });
+              if (!chat) return;
+          
+              let contenidoTraducido = contenido;
+          
+              if (enviadoPor === "cliente") {
+                // Traducir al español para el asesor usando Gemini
+                const resultado = await traducirMensajeGemini(contenido, "es", rol);
+                contenidoTraducido = resultado.contenidoTraducido;
+          
+                // Guardar idioma detectado del cliente
+                clienteIdiomas[chat.cliente_id] = resultado.idiomaDetectado;
+          
+                // Guardar mensaje traducido en base de datos
+                await Mensaje.create({
+                  chat_id: chatId,
+                  contenido: contenidoTraducido,
+                  enviado_por: enviadoPor,
+                  createdAt: new Date(createdAt)
+                });
+          
+                console.log(`🧠 Idioma del cliente detectado: ${resultado.idiomaDetectado}`);
+              }
+          
+              if (enviadoPor === "asesor") {
+                const idiomaCliente = clienteIdiomas[chat.cliente_id];
+                console.log(`📘 Idioma del cliente desde el asesor: ${idiomaCliente}`);
+          
+                if (idiomaCliente) {
+                  const resultado = await traducirMensajeGemini(contenido, idiomaCliente, rol);
+                  contenidoTraducido = resultado.contenidoTraducido;
+          
+                  // Guardar mensaje traducido (si lo necesitas)
+                  await Mensaje.create({
+                    chat_id: chatId,
                     contenido: contenidoTraducido,
                     enviado_por: enviadoPor,
-                    createdAt
-                });
-        
-                console.log(`📨 Mensaje reenviado a sala chat_${chatId}`);
+                    createdAt: new Date(createdAt)
+                  });
+          
+                  console.log(`✅ Mensaje traducido al idioma del cliente: ${idiomaCliente}`);
+                }
+              }
+          
+              // Enviar mensaje traducido a la sala
+              socket.to(`chat_${chatId}`).emit("mensaje", {
+                chatId,
+                contenido: contenidoTraducido,
+                enviado_por: enviadoPor,
+                createdAt
+              });
+          
+              console.log(`📨 Mensaje reenviado a sala chat_${chatId}`);
             } catch (error) {
-                console.error("❌ Error al manejar respuesta:", error);
+              console.error("❌ Error al manejar respuesta:", error);
             }
-        });
-        
+          });
 
         // 🔌 Desconexión
         socket.on("disconnect", () => {

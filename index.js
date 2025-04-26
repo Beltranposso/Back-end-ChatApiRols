@@ -4,6 +4,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cookieParser = require('cookie-parser');
 const { translateText } = require('./services/tranlate.js');
+const {traducirMensaje} = require('./services/GeminisTraslate.js');
 // Importar configuraciones
 const configureCors = require('./config/corsConfig');
 const configureRoutes = require('./config/routesConfig');
@@ -56,19 +57,19 @@ configureRoutes(app);
 
 // Configuración de sockets
 configureSockets(io);
-app.use('translate/:text', async (req, res) => {
+app.get('/translate/:text', async (req, res) => {
   try {
-    const translated = await translateText(req.params.text, "en-GB");
+    const resultado = await traducirMensajeGemini(req.params.text, "en", "cliente");
 
     res.json({
-        originalText: req.params.text,
-        translatedText: translated.text,
-        idioma: translated.detectedSourceLanguage
+      originalText: req.params.text,
+      translatedText: resultado.contenidoTraducido,
+      idiomaDetectado: resultado.idiomaDetectado
     });
-} catch (error) {
-    console.error("Error translating:", error);
-    res.status(500).json({ error: "Error translating text", details: error.message });
-}
+  } catch (error) {
+    console.error("❌ Error al traducir:", error);
+    res.status(500).json({ error: "Error traduciendo el texto", detalles: error.message });
+  }
 });
 // Ruta de prueba
 app.get('/', (req, res) => {
