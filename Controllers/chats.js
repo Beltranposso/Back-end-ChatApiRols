@@ -221,7 +221,6 @@ exports.AssesorEntraAlchat = async (req, res) => {
 
 
 
-
 exports.getChatsAbiertos = async (req, res) => {
     try {
         // Obtener token de las cookies

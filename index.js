@@ -256,7 +256,7 @@ io.on("connection", async (socket) => {
         const { chatId, contenido, enviadoPor,createdAt } = data;
 
         const chat = await Chat.findOne({ where: { id: chatId } });
-    
+        
         if (!chat) {
             console.log(`❌ Chat no encontrado: ${chatId}`);
             return;
@@ -268,6 +268,7 @@ io.on("connection", async (socket) => {
     
         await Mensaje.create({ chat_id: chatId, contenido, enviado_por: enviadoPor });
         
+
         // 🔹 Enviar a asesores
         socket.broadcast.emit('mensaje', {
                 chatId, 
@@ -275,6 +276,8 @@ io.on("connection", async (socket) => {
                 enviado_por: enviadoPor,
                 createdAt: createdAt,
             });
+
+
             io.emit('Mensaje23', {
                 chatId, 
                 contenido,
